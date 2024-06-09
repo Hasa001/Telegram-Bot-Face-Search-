@@ -62,12 +62,12 @@ Here's a quick guide to using me:
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global photo_expected
 
-    if update.message.text == '/photo':
+    if update.message.text == '/photo' or update.message.text == 'Find another photo':
         photo_expected = True
 
     if photo_expected:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="<b>Please send me an image!</b>",parse_mode="HTML")
-        await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="sandclock.png")
+        await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="detective.tgs")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="<b>Hi! I don't understand. Use /photo to send me an image!*</b>",parse_mode="HTML")
 
@@ -81,7 +81,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Send a loading message before starting the search
     await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="waiting.tgs")
-    loading_message = await context.bot.send_message(chat_id=update.effective_chat.id, text="<b>Searching for similar images......</b>",parse_mode="HTML")
+    loading_message = await context.bot.send_message(chat_id=update.effective_chat.id, text="<b>Searching for similar images......\nPlease wait!</b>",parse_mode="HTML")
     
     file_id = update.message.photo[-1].file_id
     new_file = await application.bot.get_file(file_id)
@@ -89,20 +89,27 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await new_file.download_to_drive(local_file_path)
 
     error, urls_images = search_by_face(local_file_path)
-
+    count=0
     if urls_images:
-        await loading_message.edit_text(text="*_Here are your links for similar images:_*",parse_mode="MarkdownV2")
         for i in range(8):
+          if urls_images[i]['score']>60:
+            count=count+1
             url = urls_images[i]['url']
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>Links</b>\n {url}",parse_mode="HTML")
     else:
         await loading_message.edit_text(text=f"Error: {error}")
 
+    if count>0:
+            await loading_message.edit_text(text="*_Here are your links for similar images:_*",parse_mode="MarkdownV2")
+            await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="done.tgs")
+    else:
+            await loading_message.edit_text(text="<b><i>Sorry! no image is found</i></b>",parse_mode="HTML")
+            await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="sad.tgs")
     # Delete the saved image and reset flag after processing
     os.remove(local_file_path)
     photo_expected = False
-    keyboard = [[telegram.KeyboardButton('/photo')]]
-    reply_markup = telegram.ReplyKeyboardMarkup(keyboard)
+    keyboard = [[telegram.KeyboardButton('Find another photo')]]
+    reply_markup = telegram.ReplyKeyboardMarkup(keyboard,one_time_keyboard=True,resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>To Continue click the button</b>",parse_mode="HTML",reply_markup=reply_markup)
 
 if __name__ == '__main__':
