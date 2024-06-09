@@ -1,3 +1,6 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 import telegram
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
@@ -8,16 +11,46 @@ import time
 import requests
 import urllib.request
 
+app = FastAPI(__name__)
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 load_dotenv()
 Token = os.getenv("TOKEN")
 ApiToken=os.getenv("APITOKEN")
 
 TESTING_MODE = True
-
 photo_expected = False
 
-urllib.request.urlretrieve('https://www.indiewire.com/wp-content/uploads/2018/01/daniel-craig.jpg?w=300', "daniel.jpg") 
+# urllib.request.urlretrieve('https://www.indiewire.com/wp-content/uploads/2018/01/daniel-craig.jpg?w=300', "daniel.jpg") 
+# @app.post('/diabetes_prediction')
+# async def diabetes_pred(input_parameters : diabetes_model_input):
+#     preg=input_parameters.Pregnancies
+#     glu = input_parameters.Glucose
+#     bp = input_parameters.BloodPressure
+#     skin = input_parameters.SkinThickness
+#     insulin = input_parameters.Insulin
+#     bmi = input_parameters.BMI
+#     dpf = input_parameters.DiabetesPedigreeFunction
+#     age = input_parameters.Age
 
+
+#     input_array = np.array([[preg,glu, bp, skin, insulin, bmi, dpf, age]])
+#     input_scaled = scaler.transform(input_array)
+#     prediction = diabetes_model.predict(input_scaled)[0] 
+#     if prediction == 1:
+#         return {'The person is Diabetic'}
+    
+#     else:
+#         return {'The person is not Diabetic'}
 def search_by_face(image_file):
     if TESTING_MODE:
         print('****** TESTING MODE search, results are inacurate, and queue wait is long, but credits are NOT deducted ******')
