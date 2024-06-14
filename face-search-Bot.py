@@ -1,6 +1,3 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 import telegram
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
@@ -9,19 +6,7 @@ from dotenv import load_dotenv
 import os
 import time
 import requests
-import urllib.request
-
-app = FastAPI(__name__)
-
-origins = ["*"]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# import urllib.request
 
 load_dotenv()
 Token = os.getenv("TOKEN")
@@ -29,28 +14,6 @@ ApiToken=os.getenv("APITOKEN")
 
 TESTING_MODE = True
 photo_expected = False
-
-# urllib.request.urlretrieve('https://www.indiewire.com/wp-content/uploads/2018/01/daniel-craig.jpg?w=300', "daniel.jpg") 
-# @app.post('/diabetes_prediction')
-# async def diabetes_pred(input_parameters : diabetes_model_input):
-#     preg=input_parameters.Pregnancies
-#     glu = input_parameters.Glucose
-#     bp = input_parameters.BloodPressure
-#     skin = input_parameters.SkinThickness
-#     insulin = input_parameters.Insulin
-#     bmi = input_parameters.BMI
-#     dpf = input_parameters.DiabetesPedigreeFunction
-#     age = input_parameters.Age
-
-
-#     input_array = np.array([[preg,glu, bp, skin, insulin, bmi, dpf, age]])
-#     input_scaled = scaler.transform(input_array)
-#     prediction = diabetes_model.predict(input_scaled)[0] 
-#     if prediction == 1:
-#         return {'The person is Diabetic'}
-    
-#     else:
-#         return {'The person is not Diabetic'}
 def search_by_face(image_file):
     if TESTING_MODE:
         print('****** TESTING MODE search, results are inacurate, and queue wait is long, but credits are NOT deducted ******')
@@ -78,7 +41,6 @@ def search_by_face(image_file):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-  # Welcome message 
   welcome_message = f"""
 <b>Hi there!  I'm your friendly face search bot. ️✨
 
@@ -124,10 +86,10 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     error, urls_images = search_by_face(local_file_path)
     count=0
     if urls_images:
-        for i in range(8):
-          if urls_images[i]['score']>60:
+        for i in urls_images:
+          if i['score']>60:
             count=count+1
-            url = urls_images[i]['url']
+            url = i['url']
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"<b>Links</b>\n {url}",parse_mode="HTML")
     else:
         await loading_message.edit_text(text=f"Error: {error}")
@@ -138,6 +100,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
             await loading_message.edit_text(text="<b><i>Sorry! no image is found</i></b>",parse_mode="HTML")
             await context.bot.send_sticker(chat_id=update.effective_chat.id, sticker="sad.tgs")
+
     # Delete the saved image and reset flag after processing
     os.remove(local_file_path)
     photo_expected = False
